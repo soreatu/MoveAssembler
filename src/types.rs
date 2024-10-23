@@ -1,4 +1,5 @@
 use regex::Regex;
+use lazy_static::lazy_static;
 use serde::de::Error;
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -668,8 +669,99 @@ pub enum BytecodeDef {
 
 impl std::fmt::Debug for BytecodeDef {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let script = def_to_bytecode(self);
-        script.fmt(f)
+        match self {
+            BytecodeDef::Pop => write!(f, "Pop"),
+            BytecodeDef::Ret => write!(f, "Ret"),
+            BytecodeDef::BrTrue(a) => write!(f, "BrTrue({})", a),
+            BytecodeDef::BrFalse(a) => write!(f, "BrFalse({})", a),
+            BytecodeDef::Branch(a) => write!(f, "Branch({})", a),
+            BytecodeDef::LdU8(a) => write!(f, "LdU8({})", a),
+            BytecodeDef::LdU16(a) => write!(f, "LdU16({})", a),
+            BytecodeDef::LdU32(a) => write!(f, "LdU32({})", a),
+            BytecodeDef::LdU64(a) => write!(f, "LdU64({})", a),
+            BytecodeDef::LdU128(a) => write!(f, "LdU128({})", a),
+            BytecodeDef::LdU256(a) => write!(f, "LdU256({})", a),
+            BytecodeDef::CastU8 => write!(f, "CastU8"),
+            BytecodeDef::CastU16 => write!(f, "CastU16"),
+            BytecodeDef::CastU32 => write!(f, "CastU32"),
+            BytecodeDef::CastU64 => write!(f, "CastU64"),
+            BytecodeDef::CastU128 => write!(f, "CastU128"),
+            BytecodeDef::CastU256 => write!(f, "CastU256"),
+            BytecodeDef::LdConst(a) => write!(f, "LdConst({})", a),
+            BytecodeDef::LdTrue => write!(f, "LdTrue"),
+            BytecodeDef::LdFalse => write!(f, "LdFalse"),
+            BytecodeDef::CopyLoc(a) => write!(f, "CopyLoc({})", a),
+            BytecodeDef::MoveLoc(a) => write!(f, "MoveLoc({})", a),
+            BytecodeDef::StLoc(a) => write!(f, "StLoc({})", a),
+            BytecodeDef::Call(a) => write!(f, "Call({})", a),
+            BytecodeDef::CallGeneric(a) => write!(f, "CallGeneric({})", a),
+            BytecodeDef::Pack(a) => write!(f, "Pack({})", a),
+            BytecodeDef::PackGeneric(a) => write!(f, "PackGeneric({})", a),
+            BytecodeDef::PackVariant(a) => write!(f, "PackVariant({})", a),
+            BytecodeDef::TestVariant(a) => write!(f, "TestVariant({})", a),
+            BytecodeDef::PackVariantGeneric(a) => write!(f, "PackVariantGeneric({})", a),
+            BytecodeDef::TestVariantGeneric(a) => write!(f, "TestVariantGeneric({})", a),
+            BytecodeDef::Unpack(a) => write!(f, "Unpack({})", a),
+            BytecodeDef::UnpackGeneric(a) => write!(f, "UnpackGeneric({})", a),
+            BytecodeDef::UnpackVariant(a) => write!(f, "UnpackVariant({})", a),
+            BytecodeDef::UnpackVariantGeneric(a) => write!(f, "UnpackVariantGeneric({})", a),
+            BytecodeDef::ReadRef => write!(f, "ReadRef"),
+            BytecodeDef::WriteRef => write!(f, "WriteRef"),
+            BytecodeDef::FreezeRef => write!(f, "FreezeRef"),
+            BytecodeDef::MutBorrowLoc(a) => write!(f, "MutBorrowLoc({})", a),
+            BytecodeDef::ImmBorrowLoc(a) => write!(f, "ImmBorrowLoc({})", a),
+            BytecodeDef::MutBorrowField(a) => write!(f, "MutBorrowField({})", a.0),
+            BytecodeDef::MutBorrowFieldGeneric(a) => write!(f, "MutBorrowFieldGeneric({})", a.0),
+            BytecodeDef::MutBorrowVariantField(a) => write!(f, "MutBorrowVariantField({})", a.0),
+            BytecodeDef::MutBorrowVariantFieldGeneric(a) => {
+                write!(f, "MutBorrowVariantFieldGeneric({})", a.0)
+            },
+            BytecodeDef::ImmBorrowField(a) => write!(f, "ImmBorrowField({})", a),
+            BytecodeDef::ImmBorrowFieldGeneric(a) => write!(f, "ImmBorrowFieldGeneric({})", a.0),
+            BytecodeDef::ImmBorrowVariantField(a) => write!(f, "ImmBorrowVariantField({})", a.0),
+            BytecodeDef::ImmBorrowVariantFieldGeneric(a) => {
+                write!(f, "ImmBorrowVariantFieldGeneric({})", a.0)
+            },
+            BytecodeDef::MutBorrowGlobal(a) => write!(f, "MutBorrowGlobal({})", a.0),
+            BytecodeDef::MutBorrowGlobalGeneric(a) => write!(f, "MutBorrowGlobalGeneric({})", a.0),
+            BytecodeDef::ImmBorrowGlobal(a) => write!(f, "ImmBorrowGlobal({})", a.0),
+            BytecodeDef::ImmBorrowGlobalGeneric(a) => write!(f, "ImmBorrowGlobalGeneric({})", a.0),
+            BytecodeDef::Add => write!(f, "Add"),
+            BytecodeDef::Sub => write!(f, "Sub"),
+            BytecodeDef::Mul => write!(f, "Mul"),
+            BytecodeDef::Mod => write!(f, "Mod"),
+            BytecodeDef::Div => write!(f, "Div"),
+            BytecodeDef::BitOr => write!(f, "BitOr"),
+            BytecodeDef::BitAnd => write!(f, "BitAnd"),
+            BytecodeDef::Xor => write!(f, "Xor"),
+            BytecodeDef::Shl => write!(f, "Shl"),
+            BytecodeDef::Shr => write!(f, "Shr"),
+            BytecodeDef::Or => write!(f, "Or"),
+            BytecodeDef::And => write!(f, "And"),
+            BytecodeDef::Not => write!(f, "Not"),
+            BytecodeDef::Eq => write!(f, "Eq"),
+            BytecodeDef::Neq => write!(f, "Neq"),
+            BytecodeDef::Lt => write!(f, "Lt"),
+            BytecodeDef::Gt => write!(f, "Gt"),
+            BytecodeDef::Le => write!(f, "Le"),
+            BytecodeDef::Ge => write!(f, "Ge"),
+            BytecodeDef::Abort => write!(f, "Abort"),
+            BytecodeDef::Nop => write!(f, "Nop"),
+            BytecodeDef::Exists(a) => write!(f, "Exists({})", a.0),
+            BytecodeDef::ExistsGeneric(a) => write!(f, "ExistsGeneric({})", a.0),
+            BytecodeDef::MoveFrom(a) => write!(f, "MoveFrom({})", a.0),
+            BytecodeDef::MoveFromGeneric(a) => write!(f, "MoveFromGeneric({})", a.0),
+            BytecodeDef::MoveTo(a) => write!(f, "MoveTo({})", a.0),
+            BytecodeDef::MoveToGeneric(a) => write!(f, "MoveToGeneric({})", a.0),
+            BytecodeDef::VecPack(a, n) => write!(f, "VecPack({}, {})", a, n),
+            BytecodeDef::VecLen(a) => write!(f, "VecLen({})", a),
+            BytecodeDef::VecImmBorrow(a) => write!(f, "VecImmBorrow({})", a),
+            BytecodeDef::VecMutBorrow(a) => write!(f, "VecMutBorrow({})", a),
+            BytecodeDef::VecPushBack(a) => write!(f, "VecPushBack({})", a),
+            BytecodeDef::VecPopBack(a) => write!(f, "VecPopBack({})", a),
+            BytecodeDef::VecUnpack(a, n) => write!(f, "VecUnpack({}, {})", a, n),
+            BytecodeDef::VecSwap(a) => write!(f, "VecSwap({})", a),
+        }
     }
 }
 
@@ -685,6 +777,12 @@ impl Serialize for BytecodeDef {
     }
 }
 
+lazy_static! {
+    static ref RE_NO_PARAM: Regex = Regex::new(r"^(?P<opcode>\w+)$").unwrap();
+    static ref RE_WITH_ONE_PARAM: Regex = Regex::new(r"^(?P<opcode>\w+)\((?P<param>\d+)\)$").unwrap();
+    static ref RE_WITH_TWO_PARAMS: Regex = Regex::new(r"^(?P<opcode>\w+)\((?P<param1>\d+),\s+(?P<param2>\d+)\)$").unwrap();
+}
+
 impl<'de> Deserialize<'de> for BytecodeDef {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -692,12 +790,7 @@ impl<'de> Deserialize<'de> for BytecodeDef {
     {
         let s = String::deserialize(deserializer)?;
 
-        let re_no_param = Regex::new(r"^(?P<opcode>\w+)$").unwrap();
-        let re_with_one_param = Regex::new(r"^(?P<opcode>\w+)\((?P<param>\d+)\)$").unwrap();
-        let re_with_two_params =
-            Regex::new(r"^(?P<opcode>\w+)\((?P<param1>\d+),\s+(?P<param2>\d+)\)$").unwrap();
-
-        if let Some(caps) = re_no_param.captures(&s) {
+        if let Some(caps) = RE_NO_PARAM.captures(&s) {
             let opcode = &caps["opcode"];
             match opcode {
                 "Pop" => Ok(BytecodeDef::Pop),
@@ -739,7 +832,7 @@ impl<'de> Deserialize<'de> for BytecodeDef {
                     s
                 ))),
             }
-        } else if let Some(caps) = re_with_one_param.captures(&s) {
+        } else if let Some(caps) = RE_WITH_ONE_PARAM.captures(&s) {
             let opcode = &caps["opcode"];
 
             // LdU256 need to be specially handled.
@@ -874,7 +967,7 @@ impl<'de> Deserialize<'de> for BytecodeDef {
                     &s
                 ))),
             }
-        } else if let Some(caps) = re_with_two_params.captures(&s) {
+        } else if let Some(caps) = RE_WITH_TWO_PARAMS.captures(&s) {
             let opcode = &caps["opcode"];
             let param1 = caps["param1"]
                 .parse::<u64>()
@@ -1245,39 +1338,39 @@ pub struct CompiledScriptDef {
     pub parameters: SignatureIndex,
 }
 
-pub fn to_compiled_script_def(script: &CompiledScript) -> CompiledScriptDef {
+pub fn to_compiled_script_def(script: CompiledScript) -> CompiledScriptDef {
     CompiledScriptDef {
         version: script.version,
-        module_handles: script.module_handles.clone(),
-        struct_handles: script.struct_handles.clone(),
-        function_handles: script.function_handles.clone(),
-        function_instantiations: script.function_instantiations.clone(),
-        signatures: script.signatures.clone(),
-        identifiers: script.identifiers.clone(),
-        address_identifiers: script.address_identifiers.clone(),
-        constant_pool: script.constant_pool.clone(),
-        metadata: script.metadata.clone(),
-        code: script.code.clone(),
-        type_parameters: script.type_parameters.clone(),
-        parameters: script.parameters.clone(),
+        module_handles: script.module_handles,
+        struct_handles: script.struct_handles,
+        function_handles: script.function_handles,
+        function_instantiations: script.function_instantiations,
+        signatures: script.signatures,
+        identifiers: script.identifiers,
+        address_identifiers: script.address_identifiers,
+        constant_pool: script.constant_pool,
+        metadata: script.metadata,
+        code: script.code,
+        type_parameters: script.type_parameters,
+        parameters: script.parameters,
     }
 }
 
-pub fn from_compiled_script_def(def: &CompiledScriptDef) -> CompiledScript {
+pub fn from_compiled_script_def(def: CompiledScriptDef) -> CompiledScript {
     CompiledScript {
         version: def.version,
-        module_handles: def.module_handles.clone(),
-        struct_handles: def.struct_handles.clone(),
-        function_handles: def.function_handles.clone(),
-        function_instantiations: def.function_instantiations.clone(),
-        signatures: def.signatures.clone(),
-        identifiers: def.identifiers.clone(),
-        address_identifiers: def.address_identifiers.clone(),
-        constant_pool: def.constant_pool.clone(),
-        metadata: def.metadata.clone(),
-        code: def.code.clone(),
-        type_parameters: def.type_parameters.clone(),
-        parameters: def.parameters.clone(),
+        module_handles: def.module_handles,
+        struct_handles: def.struct_handles,
+        function_handles: def.function_handles,
+        function_instantiations: def.function_instantiations,
+        signatures: def.signatures,
+        identifiers: def.identifiers,
+        address_identifiers: def.address_identifiers,
+        constant_pool: def.constant_pool,
+        metadata: def.metadata,
+        code: def.code,
+        type_parameters: def.type_parameters,
+        parameters: def.parameters,
     }
 }
 
@@ -1948,54 +2041,54 @@ pub struct CompiledModuleDef {
     pub variant_field_instantiations: Vec<VariantFieldInstantiation>,
 }
 
-pub fn to_compiled_module_def(module: &CompiledModule) -> CompiledModuleDef {
+pub fn to_compiled_module_def(module: CompiledModule) -> CompiledModuleDef {
     CompiledModuleDef {
         version: module.version,
         self_module_handle_idx: module.self_module_handle_idx,
-        module_handles: module.module_handles.clone(),
-        struct_handles: module.struct_handles.clone(),
-        function_handles: module.function_handles.clone(),
-        field_handles: module.field_handles.clone(),
-        friend_decls: module.friend_decls.clone(),
-        struct_def_instantiations: module.struct_def_instantiations.clone(),
-        function_instantiations: module.function_instantiations.clone(),
-        field_instantiations: module.field_instantiations.clone(),
-        signatures: module.signatures.clone(),
-        identifiers: module.identifiers.clone(),
-        address_identifiers: module.address_identifiers.clone(),
-        constant_pool: module.constant_pool.clone(),
-        metadata: module.metadata.clone(),
-        struct_defs: module.struct_defs.clone(),
-        function_defs: module.function_defs.clone(),
-        struct_variant_handles: module.struct_variant_handles.clone(),
-        struct_variant_instantiations: module.struct_variant_instantiations.clone(),
-        variant_field_handles: module.variant_field_handles.clone(),
-        variant_field_instantiations: module.variant_field_instantiations.clone(),
+        module_handles: module.module_handles,
+        struct_handles: module.struct_handles,
+        function_handles: module.function_handles,
+        field_handles: module.field_handles,
+        friend_decls: module.friend_decls,
+        struct_def_instantiations: module.struct_def_instantiations,
+        function_instantiations: module.function_instantiations,
+        field_instantiations: module.field_instantiations,
+        signatures: module.signatures,
+        identifiers: module.identifiers,
+        address_identifiers: module.address_identifiers,
+        constant_pool: module.constant_pool,
+        metadata: module.metadata,
+        struct_defs: module.struct_defs,
+        function_defs: module.function_defs,
+        struct_variant_handles: module.struct_variant_handles,
+        struct_variant_instantiations: module.struct_variant_instantiations,
+        variant_field_handles: module.variant_field_handles,
+        variant_field_instantiations: module.variant_field_instantiations,
     }
 }
 
-pub fn from_compiled_module_def(def: &CompiledModuleDef) -> CompiledModule {
+pub fn from_compiled_module_def(def: CompiledModuleDef) -> CompiledModule {
     CompiledModule {
         version: def.version,
         self_module_handle_idx: def.self_module_handle_idx,
-        module_handles: def.module_handles.clone(),
-        struct_handles: def.struct_handles.clone(),
-        function_handles: def.function_handles.clone(),
-        field_handles: def.field_handles.clone(),
-        friend_decls: def.friend_decls.clone(),
-        struct_def_instantiations: def.struct_def_instantiations.clone(),
-        function_instantiations: def.function_instantiations.clone(),
-        field_instantiations: def.field_instantiations.clone(),
-        signatures: def.signatures.clone(),
-        identifiers: def.identifiers.clone(),
-        address_identifiers: def.address_identifiers.clone(),
-        constant_pool: def.constant_pool.clone(),
-        metadata: def.metadata.clone(),
-        struct_defs: def.struct_defs.clone(),
-        function_defs: def.function_defs.clone(),
-        struct_variant_handles: def.struct_variant_handles.clone(),
-        struct_variant_instantiations: def.struct_variant_instantiations.clone(),
-        variant_field_handles: def.variant_field_handles.clone(),
-        variant_field_instantiations: def.variant_field_instantiations.clone(),
+        module_handles: def.module_handles,
+        struct_handles: def.struct_handles,
+        function_handles: def.function_handles,
+        field_handles: def.field_handles,
+        friend_decls: def.friend_decls,
+        struct_def_instantiations: def.struct_def_instantiations,
+        function_instantiations: def.function_instantiations,
+        field_instantiations: def.field_instantiations,
+        signatures: def.signatures,
+        identifiers: def.identifiers,
+        address_identifiers: def.address_identifiers,
+        constant_pool: def.constant_pool,
+        metadata: def.metadata,
+        struct_defs: def.struct_defs,
+        function_defs: def.function_defs,
+        struct_variant_handles: def.struct_variant_handles,
+        struct_variant_instantiations: def.struct_variant_instantiations,
+        variant_field_handles: def.variant_field_handles,
+        variant_field_instantiations: def.variant_field_instantiations,
     }
 }
