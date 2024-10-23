@@ -55,8 +55,8 @@ struct AssembleCommandArgs {
     #[clap(required = true)]
     pub disassembled_file_path: String,
     /// The path to the assembled file to output
-    #[clap(required = true, short = 'o', long = "output-file-path")]
-    pub output_file_path: String,
+    #[clap(short = 'o', long = "output-file-path")]
+    pub output_file_path: Option<String>,
 }
 
 #[derive(Args)]
@@ -78,12 +78,12 @@ fn disassemble_bytecode_file_to_output(
     if is_script {
         let script = CompiledScript::deserialize(&binary)
             .expect("Unable to deserialize script bytecode file");
-        disassembled = serde_json::to_string_pretty(&to_compiled_script_def(&script))
+        disassembled = serde_json::to_string_pretty(&to_compiled_script_def(script))
             .expect("Fail to serde script to json");
     } else {
         let module = CompiledModule::deserialize(&binary)
             .expect("Unable to deserialize module bytecode file");
-        disassembled = serde_json::to_string_pretty(&to_compiled_module_def(&module))
+        disassembled = serde_json::to_string_pretty(&to_compiled_module_def(module))
             .expect("Fail to serde module to json");
     }
 
@@ -96,7 +96,7 @@ fn disassemble_bytecode_file_to_output(
 
 fn assemble_bytecode_file_to_output(
     disassembled_file_path: &String,
-    output_file_path: &String,
+    output_file_path: &Option<String>,
     is_script: bool,
 ) {
     let mut binary: Vec<u8> = vec![];
@@ -106,20 +106,23 @@ fn assemble_bytecode_file_to_output(
     if is_script {
         let script_def: CompiledScriptDef = serde_json::from_str(disassembled.as_str())
             .expect("Fail to deserialize the disassembled data");
-        let script = from_compiled_script_def(&script_def);
-        script
+        from_compiled_script_def(script_def)
             .serialize(&mut binary)
             .expect("Fail to serialize CompiledScript to binary");
     } else {
         let module_def: CompiledModuleDef = serde_json::from_str(disassembled.as_str())
             .expect("Fail to deserialize the disassembled data");
-        let module = from_compiled_module_def(&module_def);
-        module
+        from_compiled_module_def(module_def)
             .serialize(&mut binary)
             .expect("Fail to serialize CompiledModule to binary");
     }
 
-    fs::write(output_file_path, binary).expect("Fail to write binary to output file");
+    if let Some(output_file_path) = &output_file_path {
+        fs::write(output_file_path, binary).expect("Fail to write binary to output file");
+    } else {
+        let hex_binary: String = binary.iter().map(|byte| format!("{:02x}", byte)).collect();
+        println!("{}", hex_binary);
+    }
 }
 
 fn verify_bytecode_file(bytecode_file_path: &String, is_script: bool) {
@@ -128,11 +131,13 @@ fn verify_bytecode_file(bytecode_file_path: &String, is_script: bool) {
     if is_script {
         let script = CompiledScript::deserialize(&binary)
             .expect("Unable to deserialize script bytecode file");
+
         let res = verify_script_with_config(&VerifierConfig::default(), &script);
         println!("{:?}", res);
     } else {
         let module = CompiledModule::deserialize(&binary)
             .expect("Unable to deserialize script bytecode file");
+
         let res = verify_module_with_config(&VerifierConfig::default(), &module);
         println!("{:?}", res);
     }
