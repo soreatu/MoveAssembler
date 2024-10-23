@@ -3,8 +3,6 @@
 MoveAssembler is a tool (yet another but better one resembles [movetool](https://github.com/Zellic/movetool)) that allows disassembling Move module/script binary files and reassembling them back into the binary format. It also supports verifying the Move binary.
 
 
-## Building
-
 ## Example usage
 
 ```shell
